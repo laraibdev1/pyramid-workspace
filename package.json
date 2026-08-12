@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "api:dev": "ts-node -r tsconfig-paths/register server/src/main.ts",
-    "api:build": "tsc -p server/tsconfig.json"
+    "api:build": "tsc -p server/tsconfig.json",
+    "api:start": "node dist/server/src/main.js"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

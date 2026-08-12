@@ -1,10 +1,11 @@
 import { IsArray, IsIn, IsISO8601, IsOptional, IsString, MaxLength, MinLength } from 'class-validator'
 
-export class CreateTaskDto {
+export class UpdateTaskDto {
+  @IsOptional()
   @IsString()
   @MinLength(1)
   @MaxLength(160)
-  title!: string
+  title?: string
 
   @IsOptional()
   @IsIn(['To Do', 'Doing', 'Completed', 'On Hold'])
