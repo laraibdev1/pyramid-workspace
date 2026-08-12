@@ -15,17 +15,13 @@ export default function Icon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          fontSize: 20,
+          fontWeight: 700,
+          color: 'white',
+          fontFamily: 'sans-serif',
         }}
       >
-        <div
-          style={{
-            width: 0,
-            height: 0,
-            borderLeft: '9px solid transparent',
-            borderRight: '9px solid transparent',
-            borderBottom: '15px solid white',
-          }}
-        />
+        P
       </div>
     ),
     { ...size },
