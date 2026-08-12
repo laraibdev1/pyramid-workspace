@@ -2,7 +2,7 @@
 
 A full-stack task management workspace built for the Full Stack Developer (Fresher) technical assessment.
 
-**Stack:** Next.js 16 (App Router) · Tailwind CSS · NestJS · Supabase (Postgres via Drizzle ORM) · TypeScript
+**Stack:** Next.js 16 (App Router) · Tailwind CSS · NestJS · Supabase (Postgres via REST API) · TypeScript
 
 **Live app:** https://pyramid-workspace.vercel.app
 **API:** https://pyramid-workspace-api.onrender.com _(update after deploying — see [Deployment](#deployment))_
@@ -23,10 +23,10 @@ Browser
                                                   │
                                                   ▼
                                           Supabase Postgres
-                                          (via Drizzle ORM)
+                                          (via Supabase REST API)
 ```
 
-- **NestJS is the one real backend.** It owns all task CRUD, DTO validation (`class-validator` + a global `ValidationPipe`), a `SessionGuard`, and talks directly to Postgres via Drizzle. This is what the "clean NestJS APIs" requirement in the brief refers to.
+- **NestJS is the one real backend.** It owns all task CRUD, DTO validation (`class-validator` + a global `ValidationPipe`), a `SessionGuard`, and talks to Postgres via the Supabase REST API. This is what the "clean NestJS APIs" requirement in the brief refers to.
 - **Next.js is a client**, not a second backend. Its only server-side code is `/api/session`, which issues a signed, httpOnly cookie for guest login — this stays on the Next.js side because it's a same-origin auth concern for the browser session, not domain data.
 - The browser calls Nest **directly and cross-origin**, sending the shared session cookie with `credentials: 'include'`. Nest's CORS is configured with `credentials: true` and reflects the calling origin, so the cookie set by Next.js is honoured by Nest's `SessionGuard`.
 
@@ -80,20 +80,21 @@ Only **one** database connection is needed — the NestJS API talks directly to 
      priority text not null default 'Medium',
      member text default 'Admin',
      due_date date,
-     labels jsonb not null default '[]',
+     labels text[] default '{}',
      created_at timestamptz not null default now(),
      updated_at timestamptz not null default now()
    );
    ```
 
-3. Copy your **Postgres connection string** from *Project Settings → Database → Connection string* — use the **Session** pooler mode (not Transaction), since both local dev and Render are long-running processes, not serverless.
+3. Copy your **project URL** and **service role key** from *Project Settings → API*.
 
 ### 3. Configure environment variables
 
 Copy `.env.example` to `.env.local` and fill in real values:
 
 ```env
-DATABASE_URL=postgresql://postgres.xxxx:[YOUR-PASSWORD]@aws-x-xxxx.pooler.supabase.com:5432/postgres
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ALLOWED_ORIGIN=https://pyramid-workspace.vercel.app
 NEXT_PUBLIC_API_URL=http://localhost:4000
 ```
@@ -182,7 +183,8 @@ components/                  UI, split by responsibility (not one big file)
 
 lib/
   api-client.ts                  points the frontend at the NestJS API base URL
-  db/schema.ts, db/index.ts      Drizzle schema + Postgres client (Nest only)
+  supabase-admin.ts              Supabase REST client (Nest only)
+  task-mapper.ts                 shared row → camelCase task mapper
   session.ts                     guest-session cookie helper (Next.js only)
 
 server/src/                  NestJS API — the one backend
@@ -211,7 +213,7 @@ Vercel can't run a persistent Node server, so the backend deploys separately.
 4. **Build Command:** `npm install && npm run api:build`
 5. **Start Command:** `npm run api:start`
 6. **Environment variables:**
-   - `DATABASE_URL` — the Supabase connection string
+   - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` — from Supabase's Project Settings → API
    - `ALLOWED_ORIGIN` — your Vercel URL, e.g. `https://pyramid-workspace.vercel.app`
 7. Deploy, then verify: `curl https://your-render-url.onrender.com/api/health` should return `{"status":"ok","databaseConfigured":true,...}`.
 8. Update `NEXT_PUBLIC_API_URL` on Vercel to the Render URL and redeploy the frontend.
