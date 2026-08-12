@@ -61,7 +61,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid #7c3aed; outline-
 .sidebar-bottom { margin-top: auto; }
 .avatar { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 .avatar-large { width: 30px; height: 30px; }
-.avatar-initials { background: #eeeeee; color: #444; font-size: 11px; }
+.avatar-initials { background: #eeeeee; color: white; font-size: 11px; font-weight: 700; letter-spacing: -0.2px; }
 
 .app-main { min-width: 0; flex: 1; display: flex; flex-direction: column; position: relative; }
 .topbar { height: 58px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; padding: 0 18px; flex: 0 0 auto; }
@@ -116,3 +116,35 @@ h1 { font-size: 17px; line-height: 1.3; margin: 0; font-weight: 600; }
 
 @media (max-width: 800px) { .sidebar { width: 180px; flex-basis: 180px; }.table-head, .table-row { grid-template-columns: minmax(210px, 1fr) 110px 90px 115px 42px; }.detail-layout { grid-template-columns: 1fr; }.details-panel { order: -1; }.settings-main { margin: 50px auto; }.topbar { padding: 0 10px; }.content-scroll { padding-left: 12px; padding-right: 12px; } }
 @media (max-width: 560px) { .sidebar { width: 58px; flex-basis: 58px; padding: 12px 6px; }.workspace-profile strong, .workspace-profile svg, .workspace-label, .nav-item:not(.selected)::after { display: none; }.workspace-profile, .nav-item { justify-content: center; padding: 8px; }.nav-item { font-size: 0; }.nav-item svg { width: 17px; }.settings-rail { width: 58px; }.settings-item, .settings-search, .back-app { font-size: 0; justify-content: center; }.settings-main { width: calc(100% - 24px); margin: 35px auto; }.settings-row { gap: 8px; }.settings-row input { width: 130px; }.login-card { width: min(340px, calc(100% - 32px)); } }
+
+/* Row actions dropdown (task table / board ellipsis menu) */
+.row-actions { position: relative; display: inline-flex; }
+.row-actions-popover { position: absolute; top: 28px; right: 0; z-index: 5; width: 190px; }
+.menu-row.danger { color: var(--danger); }
+.menu-row.danger:hover { background: rgba(239, 68, 68, 0.1); }
+.clear-filters { justify-content: center; color: var(--muted-foreground); margin-top: 6px; border-top: 1px solid var(--line); border-radius: 0; padding-top: 10px; }
+
+/* Filter badge on the topbar filter icon */
+.icon-button { position: relative; }
+.filter-count { position: absolute; top: -4px; right: -4px; min-width: 15px; height: 15px; border-radius: 999px; background: var(--foreground); color: var(--background); font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 3px; }
+
+/* Empty / loading states */
+.empty-row { padding: 26px 12px; text-align: center; color: var(--muted-foreground); font-size: 13px; }
+.empty-state { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 60px 12px; color: var(--muted-foreground); text-align: center; }
+.column-empty { text-align: center; padding: 14px 0; color: var(--muted-foreground); font-size: 12px; }
+.skeleton-block { height: 39px; border-radius: 6px; margin-bottom: 8px; background: linear-gradient(90deg, var(--muted) 25%, var(--surface) 50%, var(--muted) 75%); background-size: 200% 100%; animation: skeleton-shimmer 1.4s ease-in-out infinite; }
+@keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* Micro-interactions / polish */
+.table-row, .task-card, .nav-item, .menu-row, .check-row, .icon-button, .dark-button, .add-row, .add-card { transition: background-color .15s ease, border-color .15s ease, transform .1s ease; }
+.dark-button:active, .icon-button:active { transform: scale(0.97); }
+.task-card { cursor: pointer; }
+.table-row { cursor: pointer; }
+
+
+/* Editable settings profile fields */
+.editable-value { display: flex; align-items: center; gap: 8px; }
+.editable-value input { background: transparent; border: none; font: inherit; color: inherit; font-weight: 700; padding: 0; width: auto; }
+.editable-value input:focus { outline: none; }
+.settings-save-row { display: flex; justify-content: flex-end; padding-top: 14px; }
+.settings-save-row .dark-button:disabled { opacity: 0.45; cursor: not-allowed; }
