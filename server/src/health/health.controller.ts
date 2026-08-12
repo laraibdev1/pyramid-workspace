@@ -1,23 +1,22 @@
 import { Controller, Get } from '@nestjs/common'
-import { sql } from 'drizzle-orm'
-import { db } from '../../../lib/db'
+import { supabaseConfigured, supabaseRequest } from '../../../lib/supabase-admin'
 
 @Controller('health')
 export class HealthController {
   @Get()
   async check() {
-    const databaseConfigured = Boolean(process.env.DATABASE_URL)
+    const databaseConfigured = supabaseConfigured()
     if (!databaseConfigured) {
       return { status: 'ok', databaseConfigured: false, timestamp: new Date().toISOString() }
     }
     try {
-      const result = await db.execute(sql`SELECT NOW() AS now, to_regclass('public.tasks') AS tasks_table`)
-      return { status: 'ok', databaseConfigured: true, database: result.rows[0], timestamp: new Date().toISOString() }
+      const rows = await supabaseRequest<Array<Record<string, unknown>>>('tasks?select=id&limit=1')
+      return { status: 'ok', databaseConfigured: true, tasksReachable: Array.isArray(rows), timestamp: new Date().toISOString() }
     } catch (error) {
       return {
         status: 'degraded',
         databaseConfigured: true,
-        error: error instanceof Error ? error.message : 'Database query failed',
+        error: error instanceof Error ? error.message : 'Supabase request failed',
         timestamp: new Date().toISOString(),
       }
     }

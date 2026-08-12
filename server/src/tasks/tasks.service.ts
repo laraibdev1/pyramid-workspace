@@ -1,61 +1,71 @@
 import { Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common'
-import { desc, eq } from 'drizzle-orm'
-import { db } from '../../../lib/db'
-import { tasks } from '../../../lib/db/schema'
+import { supabaseConfigured, supabaseRequest } from '../../../lib/supabase-admin'
+import { toTask } from '../../../lib/task-mapper'
 import { CreateTaskDto } from './create-task.dto'
 import { UpdateTaskDto } from './update-task.dto'
 
-function assertDbConfigured() {
-  if (!process.env.DATABASE_URL) {
-    throw new ServiceUnavailableException('DATABASE_URL is not configured')
+function assertConfigured() {
+  if (!supabaseConfigured()) {
+    throw new ServiceUnavailableException('Supabase environment variables are not configured')
   }
 }
 
 @Injectable()
 export class TasksService {
   async list() {
-    assertDbConfigured()
-    return db.select().from(tasks).orderBy(desc(tasks.createdAt))
+    assertConfigured()
+    const rows = await supabaseRequest<Array<Record<string, unknown>>>('tasks?select=*&order=created_at.desc')
+    return rows.map(toTask)
   }
 
   async findOne(id: number) {
-    assertDbConfigured()
-    const [task] = await db.select().from(tasks).where(eq(tasks.id, id))
-    if (!task) throw new NotFoundException(`Task ${id} not found`)
-    return task
+    assertConfigured()
+    const rows = await supabaseRequest<Array<Record<string, unknown>>>(`tasks?id=eq.${id}&select=*`)
+    if (!rows[0]) throw new NotFoundException(`Task ${id} not found`)
+    return toTask(rows[0])
   }
 
   async create(input: CreateTaskDto) {
-    assertDbConfigured()
-    const [task] = await db
-      .insert(tasks)
-      .values({
+    assertConfigured()
+    const rows = await supabaseRequest<Array<Record<string, unknown>>>('tasks', {
+      method: 'POST',
+      body: JSON.stringify({
         title: input.title,
         status: input.status ?? 'To Do',
         priority: input.priority ?? 'Medium',
         member: input.member ?? 'Admin',
-        dueDate: input.dueDate ?? null,
+        due_date: input.dueDate ?? null,
         labels: input.labels ?? [],
-      })
-      .returning()
-    return task
+      }),
+    })
+    return toTask(rows[0])
   }
 
   async update(id: number, input: UpdateTaskDto) {
-    assertDbConfigured()
-    await this.findOne(id)
-    const [task] = await db
-      .update(tasks)
-      .set({ ...input, updatedAt: new Date() })
-      .where(eq(tasks.id, id))
-      .returning()
-    return task
+    assertConfigured()
+    const payload = Object.fromEntries(
+      Object.entries({
+        title: input.title,
+        status: input.status,
+        priority: input.priority,
+        member: input.member,
+        due_date: input.dueDate,
+        labels: input.labels,
+        updated_at: new Date().toISOString(),
+      }).filter(([, value]) => value !== undefined),
+    )
+    const rows = await supabaseRequest<Array<Record<string, unknown>>>(`tasks?id=eq.${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+    if (!rows[0]) throw new NotFoundException(`Task ${id} not found`)
+    return toTask(rows[0])
   }
 
   async remove(id: number) {
-    assertDbConfigured()
-    await this.findOne(id)
-    await db.delete(tasks).where(eq(tasks.id, id))
+    assertConfigured()
+    const rows = await supabaseRequest<Array<Record<string, unknown>>>(`tasks?id=eq.${id}`, { method: 'DELETE' })
+    if (!rows[0]) throw new NotFoundException(`Task ${id} not found`)
     return { deleted: true }
   }
 }
