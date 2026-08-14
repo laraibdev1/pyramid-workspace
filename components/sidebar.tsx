@@ -1,4 +1,4 @@
-import { ChevronDown, FolderKanban, LayoutList, Settings } from 'lucide-react'
+import { ChevronDown, Grid2X2, Package } from 'lucide-react'
 import { ProfilePopover } from './profile-popover'
 import type { Accent, Profile, Screen } from './types'
 import { Avatar } from './ui/avatar'
@@ -50,16 +50,11 @@ export function Sidebar({
         Workspace <ChevronDown size={14} />
       </div>
       <button className={`nav-item ${screen === 'tasks' || screen === 'detail' ? 'selected' : ''}`} onClick={() => setScreen('tasks')}>
-        <LayoutList size={16} /> Tasks
+        <Grid2X2 size={16} /> Tasks
       </button>
       <button className={`nav-item ${screen === 'projects' ? 'selected' : ''}`} onClick={() => setScreen('projects')}>
-        <FolderKanban size={16} /> Projects
+        <Package size={16} /> Projects
       </button>
-      <div className="sidebar-bottom">
-        <button className="nav-item" onClick={onSettings}>
-          <Settings size={16} /> Settings
-        </button>
-      </div>
     </aside>
   )
 }

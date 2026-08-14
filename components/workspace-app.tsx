@@ -25,12 +25,11 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [accent, setAccent] = useState<Accent>('black')
   const [fields, setFields] = useState<Record<string, boolean>>({
-    Status: true,
     Priority: true,
     Members: true,
     'Due Date': true,
-    Teams: false,
     Labels: false,
+    Status: false,
     Reporter: false,
   })
   const [search, setSearch] = useState('')

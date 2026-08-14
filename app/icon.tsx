@@ -15,13 +15,14 @@ export default function Icon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 20,
-          fontWeight: 700,
-          color: 'white',
-          fontFamily: 'sans-serif',
         }}
       >
-        P
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M12 2C16 8 20 14 20 17C20 20.3 16.4 22 12 22C7.6 22 4 20.3 4 17C4 14 8 8 12 2Z"
+            fill="white"
+          />
+        </svg>
       </div>
     ),
     { ...size },

@@ -2,7 +2,7 @@ import { Check, Grid2X2, LayoutList, Moon, Sun } from 'lucide-react'
 import { priorities, statuses } from './data'
 import type { Priority, View } from './types'
 
-const FIELD_NAMES = ['Status', 'Priority', 'Members', 'Due Date', 'Teams', 'Labels', 'Reporter']
+const FIELD_NAMES = ['Priority', 'Members', 'Due Date', 'Labels', 'Status', 'Reporter']
 
 export function MenuPopover({
   type,

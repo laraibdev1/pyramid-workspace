@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react'
+import { BrandMark } from './ui/brand-mark'
 
 export function LoginView({
   onContinue,
@@ -10,7 +10,7 @@ export function LoginView({
   return (
     <main className="login-page">
       <div className="brand-mark">
-        <Sparkles size={15} /> Pyramid
+        <BrandMark size={20} /> Pyramid
       </div>
       <div className="login-card">
         <h1>Let&apos;s get back on track</h1>
