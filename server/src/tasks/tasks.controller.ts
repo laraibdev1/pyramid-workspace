@@ -10,23 +10,27 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Get()
-  list() {
-    return this.tasksService.list()
+  async list() {
+    const tasks = await this.tasksService.list()
+    return { tasks }
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.tasksService.findOne(id)
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    const task = await this.tasksService.findOne(id)
+    return { task }
   }
 
   @Post()
-  create(@Body() input: CreateTaskDto) {
-    return this.tasksService.create(input)
+  async create(@Body() input: CreateTaskDto) {
+    const task = await this.tasksService.create(input)
+    return { task }
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() input: UpdateTaskDto) {
-    return this.tasksService.update(id, input)
+  async update(@Param('id', ParseIntPipe) id: number, @Body() input: UpdateTaskDto) {
+    const task = await this.tasksService.update(id, input)
+    return { task }
   }
 
   @Delete(':id')
