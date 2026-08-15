@@ -40,7 +40,7 @@ export function ProfilePopover({
         <ChevronRight size={14} />
       </button>
       {submenu === 'theme' && (
-        <div className="profile-submenu">
+        <div className="profile-submenu theme-submenu">
           <button className="profile-menu-row" onClick={() => { setTheme('light'); onClose() }}>
             <span>
               <Sun size={14} /> Light
@@ -63,7 +63,7 @@ export function ProfilePopover({
         <ChevronRight size={14} />
       </button>
       {submenu === 'color' && (
-        <div className="profile-submenu">
+        <div className="profile-submenu color-submenu">
           {accents.map((item) => (
             <button className="accent-button" key={item.id} onClick={() => { setAccent(item.id); onClose() }}>
               <span className="accent-swatch" style={{ '--swatch': item.swatch } as React.CSSProperties} />

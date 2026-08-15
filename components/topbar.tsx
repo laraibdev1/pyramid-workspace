@@ -39,10 +39,12 @@ export function Topbar({
             <div className={`search-control ${search ? 'search-open' : ''}`}>
               <Search size={15} />
               <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search" />
-              {search && (
+              {search ? (
                 <button onClick={() => setSearch('')} aria-label="Clear search">
                   <X size={14} />
                 </button>
+              ) : (
+                <kbd className="search-kbd">⌘F</kbd>
               )}
             </div>
           )}
