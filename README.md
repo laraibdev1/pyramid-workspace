@@ -73,7 +73,7 @@ The brief requires documenting intentional deviations here rather than leaving t
 - Figma mixes real photo avatars with initials. This build uses initials-only (no external images), by explicit request during development — a deliberate simplification, not a miss.
 
 **AI assistant**
-- Not part of the brief's requirements (confirmed against the Tech Stack and Requirements sections — neither mentions AI). Included anyway as a scoped extra: a single NestJS `/api/chat` endpoint with real function-calling against the actual `TasksService` (create/update/delete/list), not a UI mockup. See [AI assistant](#ai-assistant-optional) below. Fully optional — the app works with `GROQ_API_KEY` unset.
+- Not part of the brief's requirements (confirmed against the Tech Stack and Requirements sections — neither mentions AI). Prototyped as a scoped extra (a NestJS `/api/chat` endpoint with real function-calling against `TasksService`), but removed after testing revealed a real design flaw: each request started a stateless conversation with no memory of prior turns, so multi-step exchanges like "continue" produced confusing, unresolved replies. Rather than ship something unreliable, it was pulled. Worth fixing properly (a persisted conversation history per session) if revisited later, but not worth the risk against graded requirements right now.
 
 **General**
 - Built primarily from screenshots of the Figma file rather than direct Figma file access (no exact hex/spacing/font tokens available during development) — closely matched, but not guaranteed pixel-perfect against the source file.
@@ -179,14 +179,6 @@ curl -X POST http://localhost:4000/api/tasks \
 
 ---
 
-## AI assistant (optional)
-
-Not required by the brief — included as a scoped extra, see [Known limitations](#known-limitations--deviations-from-the-figma) above. A floating chat button (bottom-right) opens a panel that talks to `POST /api/chat`, which uses real OpenAI-compatible function-calling (via Groq) against the actual `TasksService` — it can list, create, update, and delete tasks through natural language, not just suggest text.
-
-To enable it: get a free key at [console.groq.com](https://console.groq.com), set `GROQ_API_KEY` in `.env.local`, restart `npm run api:dev`. Without a key, the chat panel still renders but returns a clear "not configured" error — the rest of the app is unaffected either way.
-
----
-
 ## Project layout
 
 ```text
@@ -210,7 +202,6 @@ components/                  UI, split by responsibility (not one big file)
   projects-view.tsx             projects list (local state)
   settings-view.tsx             editable profile + working "Leave Workspace"
   login-view.tsx                 guest login screen
-  chat-panel.tsx                 optional AI assistant panel
   workspace-app.tsx             orchestrator — owns state, wires everything together
 
 lib/
@@ -225,7 +216,6 @@ server/src/                  NestJS API — the one backend
   common/session.guard.ts        reads the shared pyramid_guest cookie
   health/health.controller.ts    GET /api/health
   tasks/                         controller, service, module, create/update DTOs
-  chat/                          optional AI assistant: controller, service, module
 ```
 
 ---
