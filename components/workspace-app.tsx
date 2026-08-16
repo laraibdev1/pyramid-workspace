@@ -2,6 +2,7 @@
 
 import { apiUrl } from '@/lib/api-client'
 import { useEffect, useMemo, useState } from 'react'
+import { ChatPanel } from './chat-panel'
 import { accents, projects as seedProjects, seedTasks } from './data'
 import { DetailView } from './detail-view'
 import { LoginView } from './login-view'
@@ -41,6 +42,21 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
   const [loginLoading, setLoginLoading] = useState(false)
   const [selectedTask, setSelectedTask] = useState(seedTasks[0])
   const [profile, setProfile] = useState<Profile>(DEFAULT_PROFILE)
+
+  const loadTasks = () => {
+    fetch(apiUrl('/api/tasks'), { credentials: 'include' })
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error('Unable to load tasks'))))
+      .then((payload: { tasks: TaskFromApi[] }) => {
+        if (payload.tasks.length === 0) return
+        const loadedTasks = payload.tasks.map((task) => ({
+          ...task,
+          id: Number(task.id),
+          date: task.dueDate ? new Date(`${task.dueDate}T00:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'Today',
+        }))
+        setTasks(Array.from(new Map(loadedTasks.map((task) => [task.id, task])).values()))
+      })
+      .catch(() => undefined)
+  }
 
   // Load persisted tasks from the API on mount.
   useEffect(() => {
@@ -295,6 +311,7 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
           </div>
         )}
       </div>
+      <ChatPanel onTasksChanged={loadTasks} />
     </div>
   )
 }

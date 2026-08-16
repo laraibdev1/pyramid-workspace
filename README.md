@@ -51,9 +51,32 @@ This is a deliberate correction from an earlier draft that duplicated task CRUD 
 
 ## Known limitations / deviations from the Figma
 
-- Projects are **local-only** (no `projects` table/API) — adding a project updates in-memory state but won't persist across a refresh. Tasks are the graded CRUD surface per the brief; projects were left as a lighter, static-feeling area.
-- Subtasks, comments, and file attachments on the task detail screen are presentational (no backing API) — out of scope for the assessment's core CRUD requirement.
-- Design fidelity was built from the Figma reference without direct design-file access during this pass; a final pixel-check against the source file is worth doing before submission.
+The brief requires documenting intentional deviations here rather than leaving them undiscovered. Everything below was a deliberate scope decision, not an oversight.
+
+**Auth**
+- Only Guest Login is functional, per the brief's explicit requirement. The Figma shows a "Login with Google" button — it's rendered for visual fidelity but is disabled/decorative, since OAuth was never a stated requirement and wasn't worth the build time against graded criteria.
+- Guest sessions currently share **one workspace** — any guest, in any browser, sees and edits the same task list. This wasn't a specific Figma requirement either way; it's a reasonable interpretation (Notion/Linear-style shared team workspace) but per-guest private data is an equally valid reading. Not changed without a decision either way — flagging it here so it's a documented choice, not a missed bug.
+
+**Projects**
+- Local-only, in-memory state — no `projects` table or API. Adding a project updates the UI but won't persist across a refresh. Tasks are the graded CRUD surface per the brief; Projects was intentionally left lighter.
+
+**Task detail screen**
+- Subtasks, comments, and file attachments are presentational (no backing API).
+- Priority/Status rows in the Details panel are static text — Figma shows these as live dropdowns. Not wired up; would reuse the same pattern as `TaskActionsMenu`, which the list/board views do already use.
+- The Dates row's calendar date-picker is not implemented (decorative).
+- No real breadcrumb navigation (`Projects > Design Homepage`) — would require actual project↔task linkage in the data model, which doesn't exist yet. Currently just a "← Tasks" back button.
+
+**Filters**
+- The Filter popover uses a single flat panel with checkboxes (Status, Priority, etc.) rather than Figma's nested flyout-per-category submenus. Functionally equivalent (multi-select filtering works), visually simpler.
+
+**Avatars**
+- Figma mixes real photo avatars with initials. This build uses initials-only (no external images), by explicit request during development — a deliberate simplification, not a miss.
+
+**AI assistant**
+- Not part of the brief's requirements (confirmed against the Tech Stack and Requirements sections — neither mentions AI). Included anyway as a scoped extra: a single NestJS `/api/chat` endpoint with real function-calling against the actual `TasksService` (create/update/delete/list), not a UI mockup. See [AI assistant](#ai-assistant-optional) below. Fully optional — the app works with `GROQ_API_KEY` unset.
+
+**General**
+- Built primarily from screenshots of the Figma file rather than direct Figma file access (no exact hex/spacing/font tokens available during development) — closely matched, but not guaranteed pixel-perfect against the source file.
 
 ---
 
@@ -156,6 +179,14 @@ curl -X POST http://localhost:4000/api/tasks \
 
 ---
 
+## AI assistant (optional)
+
+Not required by the brief — included as a scoped extra, see [Known limitations](#known-limitations--deviations-from-the-figma) above. A floating chat button (bottom-right) opens a panel that talks to `POST /api/chat`, which uses real OpenAI-compatible function-calling (via Groq) against the actual `TasksService` — it can list, create, update, and delete tasks through natural language, not just suggest text.
+
+To enable it: get a free key at [console.groq.com](https://console.groq.com), set `GROQ_API_KEY` in `.env.local`, restart `npm run api:dev`. Without a key, the chat panel still renders but returns a clear "not configured" error — the rest of the app is unaffected either way.
+
+---
+
 ## Project layout
 
 ```text
@@ -179,6 +210,7 @@ components/                  UI, split by responsibility (not one big file)
   projects-view.tsx             projects list (local state)
   settings-view.tsx             editable profile + working "Leave Workspace"
   login-view.tsx                 guest login screen
+  chat-panel.tsx                 optional AI assistant panel
   workspace-app.tsx             orchestrator — owns state, wires everything together
 
 lib/
@@ -188,11 +220,12 @@ lib/
   session.ts                     guest-session cookie helper (Next.js only)
 
 server/src/                  NestJS API — the one backend
-  main.ts                        bootstrap, global prefix, ValidationPipe, CORS
+  main.ts                        bootstrap, dotenv, global prefix, ValidationPipe, CORS
   app.module.ts                  root module
   common/session.guard.ts        reads the shared pyramid_guest cookie
   health/health.controller.ts    GET /api/health
   tasks/                         controller, service, module, create/update DTOs
+  chat/                          optional AI assistant: controller, service, module
 ```
 
 ---
