@@ -38,7 +38,8 @@ export function TaskBoard({
         <h1>Tasks</h1>
         <span className="muted-count">Board view</span>
       </div>
-      <div className="board">
+      <div className="board-scroll">
+        <div className="board">
         {statuses.map((status) => (
           <section className="board-column" key={status}>
             <div className="column-title">
@@ -79,6 +80,7 @@ export function TaskBoard({
             </button>
           </section>
         ))}
+        </div>
       </div>
     </div>
   )

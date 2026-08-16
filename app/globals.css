@@ -82,6 +82,11 @@ button:focus-visible, input:focus-visible { outline: 2px solid #7c3aed; outline-
 .dark-button.full { width: 100%; height: 34px; }
 
 .content-scroll { flex: 1; overflow: auto; padding: 26px 20px 50px; }
+.board-scroll { overflow-x: auto; overflow-y: hidden; padding-bottom: 14px; }
+.board-scroll::-webkit-scrollbar { height: 10px; }
+.board-scroll::-webkit-scrollbar-track { background: transparent; }
+.board-scroll::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 999px; }
+.board-scroll { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
 .page-heading { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
 h1 { font-size: 17px; line-height: 1.3; margin: 0; font-weight: 600; }
 .muted-count { color: var(--muted-foreground); font-size: 12px; }
