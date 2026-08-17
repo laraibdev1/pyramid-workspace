@@ -119,10 +119,10 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
 
   const clearFilters = () => { setActiveStatuses(new Set()); setActivePriorities(new Set()) }
 
-  const addTask = async () => {
+  const addTask = async (status: Task['status'] = 'To Do') => {
     const title = window.prompt('Task name', 'New task')?.trim()
     if (!title) return
-    const optimistic: Task = { id: Date.now(), title, status: 'To Do', priority: 'Medium', member: 'Admin', date: 'Today', labels: ['New'] }
+    const optimistic: Task = { id: Date.now(), title, status, priority: 'Medium', member: 'Admin', date: 'Today', labels: ['New'] }
     setTasks((current) => [...current, optimistic])
     try {
       let response: Response

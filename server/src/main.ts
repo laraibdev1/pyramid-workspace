@@ -32,14 +32,17 @@ import { AppModule } from './app.module'
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
 
-  // Allow local dev (localhost:3000) AND the configured production origin at
-  // the same time — previously this was origin: ALLOWED_ORIGIN || true, which
+  // Allow any localhost port (Next.js falls back to 3001, 3002, etc. if 3000
+  // is already taken) AND the configured production origin at the same time —
+  // previously this hardcoded localhost:3000 only, which broke the moment
+  // Next.js started on a different port, and origin: ALLOWED_ORIGIN || true
   // meant setting ALLOWED_ORIGIN for production silently blocked localhost too.
-  const allowedOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000']
-  if (process.env.ALLOWED_ORIGIN) allowedOrigins.push(process.env.ALLOWED_ORIGIN)
+  const localhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) return callback(null, true)
+      if (!origin || localhostPattern.test(origin) || origin === process.env.ALLOWED_ORIGIN) {
+        return callback(null, true)
+      }
       callback(new Error(`Origin ${origin} not allowed by CORS`))
     },
     credentials: true,

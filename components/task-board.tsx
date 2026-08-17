@@ -15,7 +15,7 @@ export function TaskBoard({
 }: {
   tasks: Task[]
   onSelect: (task: Task) => void
-  onAdd: () => void
+  onAdd: (status?: Task['status']) => void
   onChangeStatus: (id: number, status: Task['status']) => void
   onChangePriority: (id: number, priority: Priority) => void
   onDelete: (id: number) => void
@@ -46,7 +46,7 @@ export function TaskBoard({
               <span>
                 <Grid2X2 size={13} /> {status}
               </span>
-              <button className="icon-button" aria-label="Add task" onClick={onAdd}>
+              <button className="icon-button" aria-label="Add task" onClick={() => onAdd(status)}>
                 <Plus size={15} />
               </button>
             </div>
@@ -75,7 +75,7 @@ export function TaskBoard({
                 </div>
               ))}
             {tasks.filter((task) => task.status === status).length === 0 && <p className="column-empty">No tasks</p>}
-            <button className="add-card" onClick={onAdd}>
+            <button className="add-card" onClick={() => onAdd(status)}>
               <Plus size={14} /> Add Task
             </button>
           </section>

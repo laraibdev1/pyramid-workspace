@@ -14,7 +14,7 @@ export function TaskList({
 }: {
   tasks: Task[]
   onSelect: (task: Task) => void
-  onAdd: () => void
+  onAdd: (status?: Task['status']) => void
   onChangeStatus: (id: number, status: Task['status']) => void
   onChangePriority: (id: number, priority: Priority) => void
   onDelete: (id: number) => void
@@ -42,7 +42,7 @@ export function TaskList({
         </div>
         <div className="empty-state">
           <p>No tasks match your search or filters.</p>
-          <button className="dark-button" onClick={onAdd}>
+          <button className="dark-button" onClick={() => onAdd()}>
             Add your first task
           </button>
         </div>
@@ -66,7 +66,7 @@ export function TaskList({
             <TaskTable
               tasks={filtered}
               onSelect={onSelect}
-              onAdd={onAdd}
+              onAdd={() => onAdd(status)}
               onChangeStatus={onChangeStatus}
               onChangePriority={onChangePriority}
               onDelete={onDelete}
