@@ -21,9 +21,27 @@ export function supabaseConfigured() {
   return Boolean(supabaseUrl && supabaseKey)
 }
 
+function hasNonAsciiChar(value: string) {
+  for (let i = 0; i < value.length; i++) {
+    if (value.charCodeAt(i) > 255) return true
+  }
+  return false
+}
+
+const invalidCharsMessage = () => {
+  const bad = [
+    supabaseUrl && hasNonAsciiChar(supabaseUrl) && 'SUPABASE_URL',
+    supabaseKey && hasNonAsciiChar(supabaseKey) && 'SUPABASE_SERVICE_ROLE_KEY',
+  ].filter(Boolean)
+  if (bad.length === 0) return null
+  return `${bad.join(' and ')} contain invalid non-ASCII characters (e.g. a "•" bullet) — this usually means you copied a masked/hidden value instead of the actual revealed key. Go back to Supabase, click "reveal", copy the real text, and re-set the env var.`
+}
+
 export async function supabaseRequest<T>(path: string, init: RequestInit = {}) {
   const missing = missingSupabaseConfig()
   if (missing) throw new Error(`Supabase configuration is missing: ${missing}. Use literal values in .env.local, not process.env expressions, then restart.`)
+  const invalidChars = invalidCharsMessage()
+  if (invalidChars) throw new Error(invalidChars)
   const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
     ...init,
     headers: {
