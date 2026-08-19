@@ -134,7 +134,7 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
           body: JSON.stringify({ title, status: optimistic.status, priority: optimistic.priority, member: optimistic.member, labels: optimistic.labels }),
         })
       } catch {
-        throw new Error('Cannot reach the NestJS API. Start it with npm run api:dev, or check NEXT_PUBLIC_API_URL.')
+        throw new Error('Cannot reach the API. Start it or check NEXT_PUBLIC_API_URL.')
       }
       const payload = (await response.json().catch(() => ({}))) as { task?: TaskFromApi; error?: string }
       if (!response.ok) throw new Error(payload.error ?? `Save failed (${response.status})`)
@@ -200,9 +200,15 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
   const continueAsGuest = async () => {
     setLoginLoading(true)
     try {
-      const response = await fetch('/api/session', { method: 'POST' })
-      if (!response.ok) throw new Error('Unable to create session')
+      const response = await fetch(apiUrl('/api/session'), {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (!response.ok) throw new Error('Unable to create guest session')
       setScreen('tasks')
+    } catch (err) {
+      window.alert('Failed to establish session with backend.')
     } finally {
       setLoginLoading(false)
     }
@@ -211,7 +217,7 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
   const leaveWorkspace = async () => {
     if (!window.confirm('Leave this workspace? You will be signed out and returned to the login screen.')) return
     try {
-      await fetch('/api/session', { method: 'DELETE', credentials: 'include' })
+      await fetch(apiUrl('/api/session'), { method: 'DELETE', credentials: 'include' })
     } finally {
       setScreen('login')
       setProfileOpen(false)
