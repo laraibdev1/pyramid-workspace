@@ -42,13 +42,27 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
   const [selectedTask, setSelectedTask] = useState(seedTasks[0])
   const [profile, setProfile] = useState<Profile>(DEFAULT_PROFILE)
 
-  // Load persisted tasks from the API on mount.
+  // Helper to fetch authorization headers from localStorage
+  const getAuthHeaders = (): Record<string, string> => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('pyramid_token') : null
+    return token ? { Authorization: `Bearer ${token}` } : {}
+  }
+
+  // Load persisted tasks from NestJS API using Bearer Token
   useEffect(() => {
     let active = true
-    fetch(apiUrl('/api/tasks'), { credentials: 'include' })
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error('Unable to load tasks'))))
+    fetch(apiUrl('/api/tasks'), {
+      headers: { ...getAuthHeaders() },
+    })
+      .then((response) => {
+        if (response.status === 401) {
+          if (active) setScreen('login')
+          return Promise.reject(new Error('Unauthorized session'))
+        }
+        return response.ok ? response.json() : Promise.reject(new Error('Unable to load tasks'))
+      })
       .then((payload: { tasks: TaskFromApi[] }) => {
-        if (!active || payload.tasks.length === 0) return
+        if (!active || !payload?.tasks || payload.tasks.length === 0) return
         const loadedTasks = payload.tasks.map((task) => ({
           ...task,
           id: Number(task.id),
@@ -59,9 +73,8 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
       .catch(() => undefined)
       .finally(() => { if (active) setIsLoading(false) })
     return () => { active = false }
-  }, [])
+  }, [screen])
 
-  // Restore theme/accent/profile preference so it survives a refresh.
   useEffect(() => {
     const savedTheme = window.localStorage.getItem('pyramid-theme') as 'light' | 'dark' | null
     const savedAccent = window.localStorage.getItem('pyramid-accent') as Accent | null
@@ -77,7 +90,6 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
   useEffect(() => { window.localStorage.setItem('pyramid-accent', accent) }, [accent])
   useEffect(() => { window.localStorage.setItem('pyramid-profile', JSON.stringify(profile)) }, [profile])
 
-  // Cmd/Ctrl+F focuses the search box instead of the browser's find bar.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
@@ -125,17 +137,11 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
     const optimistic: Task = { id: Date.now(), title, status, priority: 'Medium', member: 'Admin', date: 'Today', labels: ['New'] }
     setTasks((current) => [...current, optimistic])
     try {
-      let response: Response
-      try {
-        response = await fetch(apiUrl('/api/tasks'), {
-          credentials: 'include',
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, status: optimistic.status, priority: optimistic.priority, member: optimistic.member, labels: optimistic.labels }),
-        })
-      } catch {
-        throw new Error('Cannot reach the API. Start it or check NEXT_PUBLIC_API_URL.')
-      }
+      const response = await fetch(apiUrl('/api/tasks'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ title, status: optimistic.status, priority: optimistic.priority, member: optimistic.member, labels: optimistic.labels }),
+      })
       const payload = (await response.json().catch(() => ({}))) as { task?: TaskFromApi; error?: string }
       if (!response.ok) throw new Error(payload.error ?? `Save failed (${response.status})`)
       if (!payload.task) throw new Error('The server did not return the saved task')
@@ -163,9 +169,8 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
     setTasks((current) => current.map((task) => (task.id === id ? { ...task, ...body } as Task : task)))
     try {
       const response = await fetch(apiUrl(`/api/tasks/${id}`), {
-        credentials: 'include',
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify(body),
       })
       const payload = (await response.json().catch(() => ({}))) as { task?: TaskFromApi; error?: string }
@@ -185,7 +190,10 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
     const previous = tasks
     setTasks((current) => current.filter((task) => task.id !== id))
     try {
-      const response = await fetch(apiUrl(`/api/tasks/${id}`), { credentials: 'include', method: 'DELETE' })
+      const response = await fetch(apiUrl(`/api/tasks/${id}`), {
+        method: 'DELETE',
+        headers: { ...getAuthHeaders() },
+      })
       const payload = (await response.json().catch(() => ({}))) as { error?: string }
       if (!response.ok) throw new Error(payload.error ?? `Delete failed (${response.status})`)
     } catch (error) {
@@ -197,31 +205,28 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
 
   const selectTask = (task: Task) => { setSelectedTask(task); setScreen('detail') }
 
+  // Guest login logic: fetch session token and persist to localStorage
   const continueAsGuest = async () => {
     setLoginLoading(true)
     try {
-      const response = await fetch(apiUrl('/api/session'), {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      })
-      if (!response.ok) throw new Error('Unable to create guest session')
+      const response = await fetch('/api/session', { method: 'POST' })
+      const data = await response.json().catch(() => ({}))
+      if (data.token) {
+        localStorage.setItem('pyramid_token', data.token)
+      }
       setScreen('tasks')
     } catch (err) {
-      window.alert('Failed to establish session with backend.')
+      window.alert('Failed to establish session.')
     } finally {
       setLoginLoading(false)
     }
   }
 
   const leaveWorkspace = async () => {
-    if (!window.confirm('Leave this workspace? You will be signed out and returned to the login screen.')) return
-    try {
-      await fetch(apiUrl('/api/session'), { method: 'DELETE', credentials: 'include' })
-    } finally {
-      setScreen('login')
-      setProfileOpen(false)
-    }
+    if (!window.confirm('Leave this workspace? You will be signed out.')) return
+    localStorage.removeItem('pyramid_token')
+    setScreen('login')
+    setProfileOpen(false)
   }
 
   if (screen === 'login') return <LoginView onContinue={continueAsGuest} isLoading={loginLoading} />

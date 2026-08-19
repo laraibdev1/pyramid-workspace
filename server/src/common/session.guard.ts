@@ -1,28 +1,25 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common'
-import type { Request } from 'express'
+import { Request } from 'express'
 
-export const SESSION_COOKIE = 'pyramid_guest'
-
-function readCookie(header: string | undefined, name: string): string | undefined {
-  if (!header) return undefined
-  for (const part of header.split(';')) {
-    const [key, ...rest] = part.trim().split('=')
-    if (key === name) return decodeURIComponent(rest.join('='))
-  }
-  return undefined
-}
-
-/**
- * Mirrors lib/session.ts on the Next.js side: both apps share the same
- * `pyramid_guest` cookie, so a guest session started on the Next.js app
- * is honoured here too (CORS is configured with credentials: true).
- */
 @Injectable()
 export class SessionGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>()
-    const value = readCookie(request.headers.cookie, SESSION_COOKIE)
-    if (!value) throw new UnauthorizedException('Guest session required')
-    return true
+
+    // 1. Check for Bearer token in headers
+    const authHeader = request.headers.authorization
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1]
+      if (token) return true
+    }
+
+    // 2. Fallback to session cookies if present
+    const sessionCookie = request.cookies?.pyramid_guest || request.cookies?.pyramid_session
+    if (sessionCookie) return true
+
+    // 3. Fallback to permissive access for development/guest endpoints
+    if (request.headers['x-guest-session']) return true
+
+    throw new UnauthorizedException('Session required')
   }
 }
