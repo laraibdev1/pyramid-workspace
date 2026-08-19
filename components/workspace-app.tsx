@@ -18,6 +18,7 @@ import type { Accent, Priority, Profile, Screen, Task, TaskFromApi, View } from 
 const DEFAULT_PROFILE: Profile = { fullName: 'Guest User', title: 'Team Member', username: 'guest', email: 'guest@pyramid.app' }
 
 export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenticated: boolean }) {
+  const [isMounted, setIsMounted] = useState(false)
   const [screen, setScreen] = useState<Screen>('login')
   const [view, setView] = useState<View>('list')
   const [menu, setMenu] = useState('')
@@ -42,16 +43,19 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
   const [selectedTask, setSelectedTask] = useState(seedTasks[0])
   const [profile, setProfile] = useState<Profile>(DEFAULT_PROFILE)
 
-  // Auto-authenticate on load if a guest token exists
+  // 1. Sync screen state synchronously on client mount before rendering UI
   useEffect(() => {
     const isAuth = localStorage.getItem('pyramid_authenticated')
     if (isAuth === 'true' || initialAuthenticated) {
       setScreen('tasks')
     }
+    setIsMounted(true)
   }, [initialAuthenticated])
 
-  // Fetch tasks with Bearer token header
+  // 2. Fetch tasks on mount/screen change
   useEffect(() => {
+    if (screen !== 'tasks' && screen !== 'detail' && screen !== 'projects') return
+
     let active = true
     const token = typeof window !== 'undefined' ? localStorage.getItem('pyramid_token') : null
 
@@ -70,7 +74,7 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
         setTasks(Array.from(new Map(loadedTasks.map((task) => [task.id, task])).values()))
       })
       .catch(() => {
-        // Fallback gracefully to local seed tasks on error—DO NOT kick back to login!
+        // Retain local optimistic/seed state on error - do NOT kick back to login
       })
       .finally(() => {
         if (active) setIsLoading(false)
@@ -147,7 +151,7 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
         })
       }
     } catch {
-      // Keep optimistic item in guest state on fail
+      // Retain optimistic state locally if API endpoint fails
     }
   }
 
@@ -199,6 +203,7 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
       }
     } finally {
       localStorage.setItem('pyramid_authenticated', 'true')
+      document.cookie = 'pyramid_authenticated=true; path=/; max-age=2592000'
       setScreen('tasks')
       setLoginLoading(false)
     }
@@ -208,8 +213,14 @@ export default function WorkspaceApp({ initialAuthenticated }: { initialAuthenti
     if (!window.confirm('Leave this workspace?')) return
     localStorage.removeItem('pyramid_authenticated')
     localStorage.removeItem('pyramid_token')
+    document.cookie = 'pyramid_authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
     setScreen('login')
     setProfileOpen(false)
+  }
+
+  // Prevent initial frame render flicker until client mount completes
+  if (!isMounted) {
+    return <div className="app-shell" style={{ opacity: 0 }} />
   }
 
   if (screen === 'login') return <LoginView onContinue={continueAsGuest} isLoading={loginLoading} />
