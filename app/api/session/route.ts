@@ -1,27 +1,51 @@
-import { cookies } from 'next/headers'
-import { randomUUID } from 'node:crypto'
+import { NextResponse, type NextRequest } from 'next/server'
 
-const SESSION_COOKIE = 'pyramid_guest'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://pyramid-workspace.onrender.com'
 
-export async function GET() {
-  const store = await cookies()
-  return Response.json({ authenticated: Boolean(store.get(SESSION_COOKIE)?.value) })
+export async function GET(request: NextRequest) {
+  const cookieHeader = request.headers.get('cookie') ?? ''
+
+  const res = await fetch(`${API_BASE_URL}/api/session`, {
+    headers: { cookie: cookieHeader },
+  })
+
+  const data = await res.json().catch(() => ({}))
+  return NextResponse.json(data, { status: res.status })
 }
 
 export async function POST() {
-  const store = await cookies()
-  store.set(SESSION_COOKIE, randomUUID(), {
-    httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: 60 * 60 * 24 * 30,
+  const res = await fetch(`${API_BASE_URL}/api/session`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
   })
-  return Response.json({ authenticated: true })
+
+  const data = await res.json().catch(() => ({}))
+  const response = NextResponse.json(data, { status: res.status })
+
+  // Forward the cookie from NestJS (Render) to your browser
+  const setCookie = res.headers.get('set-cookie')
+  if (setCookie) {
+    response.headers.set('set-cookie', setCookie)
+  }
+
+  return response
 }
 
-export async function DELETE() {
-  const store = await cookies()
-  store.delete(SESSION_COOKIE)
-  return Response.json({ authenticated: false })
+export async function DELETE(request: NextRequest) {
+  const cookieHeader = request.headers.get('cookie') ?? ''
+
+  const res = await fetch(`${API_BASE_URL}/api/session`, {
+    method: 'DELETE',
+    headers: { cookie: cookieHeader },
+  })
+
+  const data = await res.json().catch(() => ({}))
+  const response = NextResponse.json(data, { status: res.status })
+
+  const setCookie = res.headers.get('set-cookie')
+  if (setCookie) {
+    response.headers.set('set-cookie', setCookie)
+  }
+
+  return response
 }
