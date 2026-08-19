@@ -59,7 +59,7 @@ export function Topbar({
               {activeFilterCount > 0 && <span className="filter-count">{activeFilterCount}</span>}
             </IconButton>
           )}
-          <button className="dark-button" onClick={onAdd}>
+          <button className="dark-button" onClick={() => onAdd()}>
             <Plus size={14} /> {screen === 'projects' ? 'Add Project' : 'Add Task'}
           </button>
         </>
