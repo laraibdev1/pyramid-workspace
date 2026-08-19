@@ -16,8 +16,10 @@ for (const candidate of [
 import 'reflect-metadata'
 import { ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
-import * as cookieParser from 'cookie-parser'
 import { AppModule } from './app.module'
+
+// CommonJS require fallback to bypass ES module import errors in TypeScript
+const cookieParser = require('cookie-parser')
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
