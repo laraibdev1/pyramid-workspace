@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://pyramid-workspace.onrender.com'
 
@@ -12,6 +12,6 @@ export async function POST() {
     const data = await res.json().catch(() => ({}))
     return NextResponse.json(data, { status: res.status })
   } catch (err) {
-    return NextResponse.json({ error: 'Backend unreachable' }, { status: 502 })
+    return NextResponse.json({ error: 'Unable to connect to backend' }, { status: 502 })
   }
 }
